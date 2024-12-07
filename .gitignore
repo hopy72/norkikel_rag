@@ -1,3 +1,13 @@
-venv/ 
+myenv/ 
 __pycache__/ 
 *.pyc 
+
+
+# Большие файлы
+data/
+*.rar
+# Qdrant db весит 1+ Gb
+qdrant_storage/
+
+# Локальные эксперименты
+local_experiments/
