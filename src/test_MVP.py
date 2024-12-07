@@ -4,10 +4,9 @@ from PIL import Image
 import fitz
 import os
 import shutil
+from time import sleep
 from datetime import datetime
-# from search import *
 from src.search import DocumentSearchService
-
 
 chat_history = []
 
@@ -40,6 +39,66 @@ def load_local_image(file_path):
     except Exception as e:
         print(f"Ошибка при загрузке изображения {file_path}: {e}")
         return None
+    
+
+def search_images(input_text, pdf_file):
+    try:
+        # Обработка PDF файла остается как есть
+        if pdf_file is not None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"document_{timestamp}.pdf"
+            saved_pdf_path = os.path.join(UPLOAD_DIR, filename)
+            shutil.copy2(pdf_file.name, saved_pdf_path)
+        
+        search_service = DocumentSearchService()
+        search_result, images = search_service.search_documents(input_text, top_k=2)
+        documents = search_result['documents']
+        
+        filename1_val = ""
+        page1_val = ""
+        filename2_val = ""
+        page2_val = ""
+            
+        if documents and len(documents) > 0:
+            doc1 = documents[0]
+            filename1_val = doc1['filename'].split('.pdf')[0] + '.pdf'
+            page1_val = str(doc1['page_number'])
+            
+        if documents and len(documents) > 1:
+            doc2 = documents[1]
+            filename2_val = doc2['filename'].split('.pdf')[0] + '.pdf'
+            page2_val = str(doc2['page_number'])
+        
+        return [
+            images[0] if images else None, 
+            images[1] if len(images) > 1 else None,
+            filename1_val, page1_val,
+            filename2_val, page2_val,
+            documents  # Сохраняем документы для использования в generate_text_response
+        ]
+    except Exception as e:
+        error_image = np.zeros((200, 200, 3), dtype=np.uint8)
+        return [error_image, error_image, "", "", "", "", []]
+
+def generate_text_response(input_text, image_input1):
+    try:
+            
+        search_service = DocumentSearchService()
+        response = search_service.generate_response(input_text, image_input1)
+        
+        # Добавляем в историю
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        chat_history.append({
+            "timestamp": timestamp,
+            "query": input_text,
+            "response": response
+        })
+        
+        history_data = [[h["timestamp"], h["query"], h["response"]] for h in chat_history]
+        return response, history_data
+    except Exception as e:
+        return f"Произошла ошибка: {str(e)}", []
+
 
 
 def generate_response(input_text, pdf_file):
@@ -106,6 +165,11 @@ with gr.Blocks() as demo:
     with gr.Row():
         output_text = gr.Textbox(label="Текстовый ответ", interactive=False)
 
+    documents_state = gr.State([])  # Добавляем состояние для хранения документов
+    
+    with gr.Row():
+        search_button = gr.Button("Найти документы")
+        generate_button = gr.Button("Сгенерировать ответ")
 
     with gr.Row():
         history_box = gr.Dataframe(
@@ -113,64 +177,38 @@ with gr.Blocks() as demo:
             label="История запросов",
             interactive=False
         )
-    
-    def update_and_show_response(input_text, pdf_file):
-        response, img1, img2, documents = generate_response(input_text, pdf_file)
-    
-        # Получаем информацию о документах
-        if documents and len(documents) > 0:
-            doc1 = documents[0]
-            filename1_val = doc1['filename'].split('.pdf')[0] + '.pdf'
-            page1_val = str(doc1['page_number'])
-        else:
-            filename1_val = ""
-            page1_val = ""
-        
-        if documents and len(documents) > 1:
-            doc2 = documents[1]
-            filename2_val = doc2['filename'].split('.pdf')[0] + '.pdf'
-            page2_val = str(doc2['page_number'])
-        else:
-            filename2_val = ""
-            page2_val = ""
-    
-        # Формируем данные для таблицы истории
-        history_data = [[h["timestamp"], h["query"], h["response"]] for h in chat_history]
-    
-        return [
-        response, 
-        img1, img2,
-        filename1_val, page1_val,
-        filename2_val, page2_val,
-        history_data
-    ]
-    
     with gr.Row():
         with gr.Column():
             image_output1 = gr.Image(label="Изображение 1")
-            # Добавляем информацию под первым изображением
+                # Добавляем информацию под первым изображением
             with gr.Row():
                 filename1 = gr.Textbox(label="Файл", interactive=False, scale=2)
                 page1 = gr.Textbox(label="Страница", interactive=False, scale=1)
-        
+            
         with gr.Column():
             image_output2 = gr.Image(label="Изображение 2")
-            # Добавляем информацию под вторым изображением
+                # Добавляем информацию под вторым изображением
             with gr.Row():
                 filename2 = gr.Textbox(label="Файл", interactive=False, scale=2)
                 page2 = gr.Textbox(label="Страница", interactive=False, scale=1)
     
-    button = gr.Button("Сгенерировать ответ")
-    button.click(
-        update_and_show_response,
+    # Обработчик для поиска документов
+    search_button.click(
+        search_images,
         inputs=[input_text, pdf_input],
         outputs=[
-            output_text, 
             image_output1, image_output2,
             filename1, page1,
             filename2, page2,
-            history_box
+            documents_state
         ]
+    )
+    
+    # Обработчик для генерации текстового ответа
+    generate_button.click(
+        generate_text_response,
+        inputs=[input_text, image_output1],
+        outputs=[output_text, history_box]
     )
 
 demo.launch(share=True)
