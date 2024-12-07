@@ -4,7 +4,10 @@ __pycache__/
 
 
 # Большие файлы
+models/
+uploaded_files/
 data/
+Meta-LLama-3.1-8B-Instruct/
 *.rar
 # Qdrant db весит 1+ Gb
 qdrant_storage/
