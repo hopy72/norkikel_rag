@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Сервис Qdrant - векторная база данных для хранения и поиска эмбеддингов
+  qdrant:
+    image: qdrant/qdrant:latest  # Используем последнюю версию образа Qdrant
+    ports:
+      - "6333:6333"  # Порт для REST API
+      - "6334:6334"  # Порт для gRPC
+    volumes:
+      - ./qdrant_storage:/qdrant/storage:z  # Монтируем локальную директорию для хранения данных
+    restart: unless-stopped  # Автоматический перезапуск при сбое
+    healthcheck:  # Проверка работоспособности сервиса
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s  # Интервал между проверками
+      timeout: 10s   # Таймаут ожидания ответа
+      retries: 3     # Количество повторных попыток
+      start_period: 40s  # Начальный период ожидания
+
+  # Основное приложение FastAPI
+  app:
+    build: 
+      context: .  # Контекст сборки - текущая директория
+      dockerfile: Dockerfile  # Путь к Dockerfile
+    depends_on:  # Зависимость от сервиса Qdrant
+      qdrant:
+        condition: service_healthy  # Ждем, пока Qdrant не станет здоровым
+    ports:
+      - "8000:8000"  # Проброс порта для доступа к API
+    volumes:
+      - .:/app  # Монтируем код приложения для разработки
+    environment:  # Переменные окружения
+      - QDRANT_HOST=qdrant  # Имя хоста Qdrant в сети Docker
+      - QDRANT_PORT=6333    # Порт Qdrant
+      - PYTHONPATH=/app     # Путь к модулям Python
+    restart: unless-stopped  # Автоматический перезапуск при сбое

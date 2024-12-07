@@ -117,7 +117,6 @@ class DocumentDataPreparer:
             if target_size:
                 images[i] = images[i].resize(target_size, Image.LANCZOS)
 
-        a = 1
         return images
 
     def prepare_documents(

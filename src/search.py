@@ -10,7 +10,7 @@ from src.data_preparation.data_preparer import DocumentDataPreparer
 class DocumentSearchService:
     def __init__(
         self, 
-        base_data_directory: str = "../data/prepared_data/",
+        base_data_directory: str = "data/prepared_data/",
         model_name: str = "vidore/colqwen2-v0.1",
         multimodal_model_name: str = 'openbmb/MiniCPM-V-2_6-int4'
     ):
@@ -58,31 +58,36 @@ class DocumentSearchService:
         Returns:
             dict: Найденные документы
         """
-        # Поиск релевантных изображений
-        relevant_images = self.indexer.search_by_text_and_return_images(
-            query, 
-            top_k=top_k
+        try:
+            # Поиск релевантных изображений
+            relevant_images = self.indexer.search_by_text_and_return_images(
+                query, 
+                top_k=top_k
         )
 
         # Подготовка списка документов с base64 изображениями
-        documents = []
-        images = []
-        for idx, image in enumerate(relevant_images):
-            doc_info = {
-                "index": idx,
-                "filename": getattr(image, 'filename', 'unknown'),
-                "page_number": getattr(image, 'page_number', None),
-                "width": image.width,
-                "height": image.height,
-                "image_base64": self.image_to_base64(image)  # Добавляем base64 изображения
-            }
-            images.append(image)
-            documents.append(doc_info)
+            documents = []
+            images = []
+            for idx, image in enumerate(relevant_images):
+                doc_info = {
+                    "index": idx,
+                    "filename": getattr(image, 'filename', 'unknown'),
+                    "page_number": getattr(image, 'page_number', None),
+                    "width": image.width,
+                    "height": image.height,
+                    # "image_base64": self.image_to_base64(image)  # Добавляем base64 изображения
+                }
+                images.append(image)
+                documents.append(doc_info)
 
-        return {
-            "query": query,
-            "documents": documents
-        }, images
+            return {
+                "query": query,
+                "documents": documents
+            } , images
+
+        except Exception as e:
+            print(f"Error in search_documents: {e}")
+            raise  # Reraise для получения полного трейсбэка
 
     def generate_response(
         self, 
@@ -109,6 +114,7 @@ def main():
     """
     Пример использования DocumentSearchService
     """
+    a = 1
     # Инициализация сервиса поиска
     search_service = DocumentSearchService()
 
