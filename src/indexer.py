@@ -4,7 +4,7 @@
 
 import yaml
 import torch
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional
 
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
@@ -13,6 +13,7 @@ from tqdm import tqdm
 from colpali_engine.models import ColQwen2, ColQwen2Processor
 from src.data_preparation.data_preparer import DocumentDataPreparer  # Импорт вашего data preparer
 from PIL import Image
+
 
 class DocumentIndexer:
     def __init__(

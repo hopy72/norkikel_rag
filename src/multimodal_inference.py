@@ -39,7 +39,7 @@ class MultimodalInference:
         self, 
         image: Image.Image, 
         query: str, 
-        max_length: int = 2048
+        max_length: int = 10000
     ) -> str:
         """
         Генерация ответа на основе изображения и запроса
@@ -62,7 +62,8 @@ class MultimodalInference:
                     image=image, 
                     msgs=msgs, 
                     tokenizer=self.tokenizer,
-                    max_length=max_length
+                    max_length=max_length,
+                    temperature=0.2,
                 )
 
             return response

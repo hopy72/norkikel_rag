@@ -5,7 +5,8 @@ import fitz
 import os
 import shutil
 from datetime import datetime
-from search import *
+# from search import *
+from src.search import DocumentSearchService
 
 
 chat_history = []
@@ -15,6 +16,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Создаем путь для загрузки файлов
 UPLOAD_DIR = os.path.join(BASE_DIR, "data", "raw_files")
+
+search_service = DocumentSearchService()
 
 # Создаем директорию, если она не существует
 if not os.path.exists(UPLOAD_DIR):
@@ -62,9 +65,6 @@ def generate_response(input_text, pdf_file):
             print(f"PDF сохранен по пути: {saved_pdf_path}")
         print(pdf_text)
 
-
-
-        search_service = DocumentSearchService()
         print(f"Запрос: {input_text}")
         
         # Сначала ищем документы
@@ -92,7 +92,7 @@ def generate_response(input_text, pdf_file):
     except Exception as e:
         error_image = np.zeros((200, 200, 3), dtype=np.uint8)
         return f"Произошла ошибка: {str(e)}", error_image, error_image, []
-        
+
 
 with gr.Blocks() as demo:
     gr.Markdown("### Демонстрационное приложение")
