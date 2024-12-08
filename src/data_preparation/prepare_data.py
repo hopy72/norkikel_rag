@@ -1,3 +1,4 @@
+from datetime import datetime
 import os  # Импорт os для работы с файлами
 
 import fitz  # PyMuPDF для работы с PDF
@@ -8,8 +9,9 @@ from docx2pdf import convert
 from tqdm.notebook import tqdm  # Импорт прогресс-бара для Jupyter
 
 
-def pdf_to_pil_images(pdf_path, output_directory):
+def pdf_to_pil_images(pdf_path, output_directory, user_files=False):
     # Открываем PDF файл
+
     pdf_document = fitz.open(pdf_path)
 
     for page_number in tqdm(range(len(pdf_document))):
@@ -23,20 +25,42 @@ def pdf_to_pil_images(pdf_path, output_directory):
         img = Image.open(io.BytesIO(pix.tobytes()))
 
         # Сохраняем изображение в выходную директорию
-        image_filename = os.path.join(output_directory, f"{os.path.basename(pdf_path)}_page_{page_number + 1}.png")
+        if user_files:
+            # Добавляем метку времени для пользовательских файлов
+            timestamp = datetime.now().timestamp()
+            image_filename = os.path.join(output_directory, 
+                f"{os.path.basename(pdf_path)}_timestamp__{timestamp}__page_{page_number + 1}.png")
+        else:
+            image_filename = os.path.join(output_directory, 
+                f"{os.path.basename(pdf_path)}_page_{page_number + 1}.png")
+            
         img.save(image_filename)
 
     # Закрываем PDF документ
     pdf_document.close()
 
-def convert_all_files(directory, output_directory):
+def convert_all_files(directory, output_directory, user_files=False):
     # Создаем выходную директорию, если она не существует
     os.makedirs(output_directory, exist_ok=True)
 
-    for filename in tqdm(os.listdir(directory)):
-        if filename.endswith('.pdf'):
-            pdf_path = os.path.join(directory, filename)
-            pdf_to_pil_images(pdf_path, output_directory)
+    # Получаем список всех PDF файлов
+    pdf_files = [f for f in os.listdir(directory) if f.endswith('.pdf')]
+
+    # Если это пользовательские файлы, сортируем по временной метке между __
+    if user_files:
+        def get_timestamp(filename):
+            # Извлекаем временную метку между __
+            parts = filename.split('__')
+            if len(parts) >= 2:
+                timestamp = parts[1].split('.pdf')[0]  # Берем часть до .pdf
+                return timestamp
+            raise ValueError(f"Не удалось извлечь временную метку из файла {filename}")
+            
+        pdf_files.sort(key=get_timestamp)
+
+    for filename in tqdm(pdf_files):
+        pdf_path = os.path.join(directory, filename)
+        pdf_to_pil_images(pdf_path, output_directory, user_files)
 
 def convert_docx_to_pdf(input_directory):
     """

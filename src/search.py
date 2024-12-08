@@ -90,8 +90,8 @@ class DocumentSearchService:
             raise  # Reraise для получения полного трейсбэка
 
     def generate_response(
-        self, 
-        query: str, 
+        self,
+        query: str,
         image: Image.Image
     ) -> str:
         """
@@ -105,7 +105,7 @@ class DocumentSearchService:
             str: Сгенерированный ответ
         """
         return self.multimodal_inference.generate_response(
-            image, 
+            image,
             query
         )
 

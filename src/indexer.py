@@ -164,6 +164,59 @@ class DocumentIndexer:
         row_ids = [r.id for r in results.points]
         return [self.dataset[i] for i in row_ids]
 
+    def index_new_documents(
+            self,
+            new_dataset: List[Image.Image],
+            batch_size: int = 16,
+            metadata: Dict[str, str] = {"source": "document_archive"},
+        ):
+            """
+            Индексация новых документов, добавленных в набор данных
+            """
+            # Получение ID уже проиндексированных документов
+            indexed_ids = [i for i in range(self.qdrant_client.count(self.collection_name))]
+            # Фильтрация новых документов
+            new_documents = [doc for i, doc in enumerate(new_dataset) if i not in indexed_ids]
+
+            # Индексация новых документов с прогресс-баром
+            with tqdm(total=len(new_documents), desc="Indexing New Documents") as pbar:
+                for i in range(0, len(new_documents), batch_size):
+                    if i not in indexed_ids:
+                        batch = new_documents[i : i + batch_size]
+
+                        # Генерация эмбеддингов
+                        with torch.no_grad():
+                            batch_images = self.processor.process_images(batch).to(self.model.device)
+                            image_embeddings = self.model(**batch_images)
+                        
+                        # Подготовка точек для Qdrant
+                        points = []
+                        for j, embedding in enumerate(image_embeddings):
+                            multivector = embedding.cpu().float().numpy().tolist()
+                            points.append(
+                                models.PointStruct(
+                                    id=i + j,
+                                    vector=multivector,
+                                    payload={
+                                        **metadata,
+                                        "filename": batch[j].filename,
+                                        "page_number": getattr(batch[j], 'page_number', None),
+                                        "text": getattr(batch[j], 'text', None)  # Добавляем текст из изображения
+                                    }
+                                )
+                            )
+                            
+                            # Загрузка точек в Qdrant
+                            self.qdrant_client.upsert(
+                                collection_name=self.collection_name,
+                                points=points
+                            )
+                            
+                            pbar.update(len(batch))
+
+            print("Индексация новых документов завершена!")
+
+
 def main():
     """
     Пример использования

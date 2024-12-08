@@ -24,7 +24,7 @@ colpali_engine==0.3.4
 # dill==0.3.8
 # diskcache==5.6.3
 # docopt==0.6.2
-# docx2pdf==0.1.8
+docx2pdf==0.1.8
 # easyocr==1.7.2
 # executing==2.1.0
 fastapi==0.115.6
@@ -34,7 +34,7 @@ fastapi==0.115.6
 # frozenlist==1.5.0
 # fsspec==2024.2.0
 # GPUtil==1.4.0
-# gradio==5.8.0
+gradio==5.8.0
 gradio_client==1.5.1
 # grpcio==1.68.1
 # grpcio-tools==1.68.1
@@ -99,7 +99,7 @@ pydantic==2.10.3
 pydantic_core==2.27.1
 # pydub==0.25.1
 # Pygments==2.18.0
-# PyMuPDF==1.25.0
+PyMuPDF==1.25.0
 # PyPDF2==3.0.1
 # pytesseract==0.3.13
 # python-bidi==0.6.3
@@ -139,7 +139,8 @@ qdrant-client==1.12.1
 # tinycss2==1.4.0
 # tokenizers==0.20.3
 # tomlkit==0.13.2
-# torch==2.5.1+cu124
+
+bitsandbytes
 # torchvision==0.20.1+cu124
 # tornado==6.4.2
 tqdm==4.67.1

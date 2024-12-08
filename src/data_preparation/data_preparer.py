@@ -91,6 +91,37 @@ class DocumentDataPreparer:
 
         return png_images
 
+    def read_png_files_with_order(self, path_to_user_files) -> List[Image.Image]:
+        # Список для хранения изображений
+        png_images = []
+
+        # Перебор файлов в директории
+        files = os.listdir(path_to_user_files)
+        
+        # Сортировка файлов по временной метке в имени файла
+        def get_timestamp(filename):
+            # Извлекаем временную метку между разделителями __
+            parts = filename.split('__')
+            if len(parts) >= 3:
+                timestamp = parts[2]  # Получаем часть с временной меткой
+                return int(timestamp)
+            return 0  # Возвращаем 0, если временная метка не найдена
+    
+        files.sort(key=get_timestamp)
+        for filename in files:
+            if filename.endswith('.png'):
+                image_path = os.path.join(path_to_user_files, filename)
+
+                # Открытие изображения
+                img = Image.open(image_path)
+
+                # Добавление метаданных
+                img.filename = filename
+
+                png_images.append(img)
+
+        return png_images
+
     def preprocess_images(
         self, 
         images: List[Image.Image], 
